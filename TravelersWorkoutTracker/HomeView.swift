@@ -9,6 +9,9 @@ struct HomeView: View {
     @State private var saveErrorMessage: String?
     @State private var backupDocument: WorkoutBackupDocument?
     @State private var showingBackupExporter = false
+    @State private var showingRestoreImporter = false
+    @State private var pendingRestoreBackup: WorkoutBackup?
+    @State private var restoreSummary: String?
 
     private var activeSessionList: [ActiveSession] {
         activeSessions.filter { $0.status == .active }
@@ -115,10 +118,19 @@ struct HomeView: View {
         .navigationTitle("Home")
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    exportBackup()
+                Menu {
+                    Button {
+                        exportBackup()
+                    } label: {
+                        Label("Back Up Data", systemImage: "square.and.arrow.up")
+                    }
+                    Button {
+                        showingRestoreImporter = true
+                    } label: {
+                        Label("Restore from Backup", systemImage: "square.and.arrow.down")
+                    }
                 } label: {
-                    Label("Back Up Data", systemImage: "square.and.arrow.up")
+                    Label("Data", systemImage: "externaldrive")
                 }
             }
         }
@@ -131,6 +143,41 @@ struct HomeView: View {
             if case .failure(let error) = result {
                 saveErrorMessage = error.localizedDescription
             }
+        }
+        .fileImporter(
+            isPresented: $showingRestoreImporter,
+            allowedContentTypes: [.json]
+        ) { result in
+            switch result {
+            case .success(let url):
+                loadBackup(from: url)
+            case .failure(let error):
+                saveErrorMessage = error.localizedDescription
+            }
+        }
+        .confirmationDialog(
+            "Restore Backup",
+            isPresented: Binding(
+                get: { pendingRestoreBackup != nil },
+                set: { if !$0 { pendingRestoreBackup = nil } }
+            ),
+            titleVisibility: .visible
+        ) {
+            Button("Merge with Existing Data") { performRestore(.merge) }
+            Button("Replace All Data", role: .destructive) { performRestore(.replace) }
+            Button("Cancel", role: .cancel) { pendingRestoreBackup = nil }
+        } message: {
+            if let backup = pendingRestoreBackup {
+                Text("Backup from \(backup.exportedAt.formatted(date: .abbreviated, time: .shortened)) with \(backup.movements.count) movements and \(backup.plannedSessions.count) planned sessions. Merge keeps data not in the backup; Replace deletes everything first.")
+            }
+        }
+        .alert("Restore Complete", isPresented: Binding(
+            get: { restoreSummary != nil },
+            set: { if !$0 { restoreSummary = nil } }
+        )) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(restoreSummary ?? "")
         }
         .alert("Could Not Save", isPresented: Binding(
             get: { saveErrorMessage != nil },
@@ -155,6 +202,27 @@ struct HomeView: View {
         do {
             backupDocument = WorkoutBackupDocument(data: try WorkoutBackupService.exportJSON(context: modelContext))
             showingBackupExporter = true
+        } catch {
+            saveErrorMessage = error.localizedDescription
+        }
+    }
+
+    private func loadBackup(from url: URL) {
+        do {
+            let accessing = url.startAccessingSecurityScopedResource()
+            defer { if accessing { url.stopAccessingSecurityScopedResource() } }
+            pendingRestoreBackup = try WorkoutBackupService.decodeBackup(from: Data(contentsOf: url))
+        } catch {
+            saveErrorMessage = error.localizedDescription
+        }
+    }
+
+    private func performRestore(_ mode: WorkoutBackupService.RestoreMode) {
+        guard let backup = pendingRestoreBackup else { return }
+        pendingRestoreBackup = nil
+        do {
+            try WorkoutBackupService.restore(backup, into: modelContext, mode: mode)
+            restoreSummary = "Restored \(backup.movements.count) movements, \(backup.plannedSessions.count) planned sessions, and \(backup.activeSessions.count + backup.workoutSessions.count) sessions."
         } catch {
             saveErrorMessage = error.localizedDescription
         }

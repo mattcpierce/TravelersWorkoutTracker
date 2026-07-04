@@ -152,6 +152,159 @@ enum WorkoutBackupService {
         let stamp = date.formatted(.iso8601.year().month().day())
         return "TravelersWorkout-Backup-\(stamp)"
     }
+
+    enum RestoreMode {
+        case merge
+        case replace
+    }
+
+    enum BackupError: LocalizedError {
+        case unsupportedSchemaVersion(Int)
+
+        var errorDescription: String? {
+            switch self {
+            case .unsupportedSchemaVersion(let version):
+                return "This backup was created by a newer version of the app (format \(version)). Update the app to restore it."
+            }
+        }
+    }
+
+    static func restore(_ backup: WorkoutBackup, into context: ModelContext, mode: RestoreMode) throws {
+        guard backup.schemaVersion <= currentSchemaVersion else {
+            throw BackupError.unsupportedSchemaVersion(backup.schemaVersion)
+        }
+
+        if mode == .replace {
+            try deleteAll(WorkoutSession.self, in: context)
+            try deleteAll(SessionExercise.self, in: context)
+            try deleteAll(WorkoutTemplate.self, in: context)
+            try deleteAll(ActiveSession.self, in: context)
+            try deleteAll(PlannedSession.self, in: context)
+            try deleteAll(Movement.self, in: context)
+        }
+
+        let existingMovements = try lookup(Movement.self, by: \.id, in: context)
+        for entry in backup.movements {
+            if let movement = existingMovements[entry.id] {
+                movement.name = entry.name
+                movement.description = entry.movementDescription
+                movement.category = entry.category
+                movement.tags = entry.tags
+                movement.hotelAlternativeMovementId = entry.hotelAlternativeMovementId
+                movement.allowedModalities = entry.allowedModalities
+                movement.isCustom = entry.isCustom
+            } else {
+                context.insert(Movement(
+                    id: entry.id,
+                    name: entry.name,
+                    description: entry.movementDescription,
+                    category: entry.category,
+                    tags: entry.tags,
+                    hotelAlternativeMovementId: entry.hotelAlternativeMovementId,
+                    allowedModalities: entry.allowedModalities,
+                    isCustom: entry.isCustom
+                ))
+            }
+        }
+
+        let existingPlans = try lookup(PlannedSession.self, by: \.id, in: context)
+        for entry in backup.plannedSessions {
+            if let plan = existingPlans[entry.id] {
+                plan.name = entry.name
+                plan.blocks = entry.blocks
+                plan.lastPerformedDate = entry.lastPerformedDate
+            } else {
+                context.insert(PlannedSession(
+                    id: entry.id,
+                    name: entry.name,
+                    blocks: entry.blocks,
+                    lastPerformedDate: entry.lastPerformedDate
+                ))
+            }
+        }
+
+        let existingActiveSessions = try lookup(ActiveSession.self, by: \.id, in: context)
+        for entry in backup.activeSessions {
+            if let session = existingActiveSessions[entry.id] {
+                session.plannedSessionId = entry.plannedSessionId
+                session.startTime = entry.startTime
+                session.completedAt = entry.completedAt
+                session.isTravelMode = entry.isTravelMode
+                session.status = entry.status
+                session.blocks = entry.blocks
+            } else {
+                context.insert(ActiveSession(
+                    id: entry.id,
+                    plannedSessionId: entry.plannedSessionId,
+                    startTime: entry.startTime,
+                    completedAt: entry.completedAt,
+                    isTravelMode: entry.isTravelMode,
+                    status: entry.status,
+                    blocks: entry.blocks
+                ))
+            }
+        }
+
+        let existingTemplates = try lookup(WorkoutTemplate.self, by: \.id, in: context)
+        for entry in backup.workoutTemplates {
+            if let template = existingTemplates[entry.id] {
+                template.name = entry.name
+                template.orderedMovements = entry.orderedMovements
+            } else {
+                context.insert(WorkoutTemplate(
+                    id: entry.id,
+                    name: entry.name,
+                    orderedMovements: entry.orderedMovements
+                ))
+            }
+        }
+
+        // Workout sessions own their exercises via a cascade relationship, so
+        // an updated entry is replaced wholesale rather than patched in place.
+        let existingWorkouts = try lookup(WorkoutSession.self, by: \.id, in: context)
+        for entry in backup.workoutSessions {
+            if let workout = existingWorkouts[entry.id] {
+                context.delete(workout)
+            }
+            context.insert(WorkoutSession(
+                id: entry.id,
+                date: entry.date,
+                templateId: entry.templateId,
+                sessionExercises: entry.exercises.map { exercise in
+                    SessionExercise(
+                        id: exercise.id,
+                        movementId: exercise.movementId,
+                        equipment: exercise.equipment,
+                        sets: exercise.sets,
+                        reps: exercise.reps,
+                        weight: exercise.weight,
+                        rpe: exercise.rpe,
+                        notes: exercise.notes,
+                        isCompleted: exercise.isCompleted
+                    )
+                }
+            ))
+        }
+
+        try context.save()
+    }
+
+    private static func deleteAll<T: PersistentModel>(_ type: T.Type, in context: ModelContext) throws {
+        for object in try context.fetch(FetchDescriptor<T>()) {
+            context.delete(object)
+        }
+    }
+
+    private static func lookup<T: PersistentModel>(
+        _ type: T.Type,
+        by id: KeyPath<T, String>,
+        in context: ModelContext
+    ) throws -> [String: T] {
+        Dictionary(
+            try context.fetch(FetchDescriptor<T>()).map { ($0[keyPath: id], $0) },
+            uniquingKeysWith: { first, _ in first }
+        )
+    }
 }
 
 struct WorkoutBackupDocument: FileDocument {

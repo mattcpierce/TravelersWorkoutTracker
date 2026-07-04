@@ -112,6 +112,90 @@ struct WorkoutBackupTests {
         #expect(backup.workoutSessions.isEmpty)
     }
 
+    @Test func restoreReplaceMatchesBackupExactly() throws {
+        let sourceContainer = try makeContainer()
+        try populate(sourceContainer.mainContext)
+        let backup = try WorkoutBackupService.makeBackup(context: sourceContainer.mainContext)
+
+        let targetContainer = try makeContainer()
+        let target = targetContainer.mainContext
+        target.insert(Movement(id: "doomed", name: "Doomed", description: "will be deleted", isCustom: true))
+        target.insert(PlannedSession(id: "doomed-plan", name: "Doomed Plan"))
+        try target.save()
+
+        try WorkoutBackupService.restore(backup, into: target, mode: .replace)
+
+        let movements = try target.fetch(FetchDescriptor<Movement>())
+        #expect(movements.map(\.id) == ["custom-band-pull"])
+        let plans = try target.fetch(FetchDescriptor<PlannedSession>())
+        #expect(plans.map(\.id) == ["plan-1"])
+        #expect(try target.fetch(FetchDescriptor<WorkoutSession>()).count == 1)
+        #expect(try target.fetch(FetchDescriptor<SessionExercise>()).count == 1)
+    }
+
+    @Test func restoreMergeUpsertsAndPreservesExtras() throws {
+        let sourceContainer = try makeContainer()
+        try populate(sourceContainer.mainContext)
+        let backup = try WorkoutBackupService.makeBackup(context: sourceContainer.mainContext)
+
+        let targetContainer = try makeContainer()
+        let target = targetContainer.mainContext
+        target.insert(Movement(id: "custom-band-pull", name: "Stale Name", description: "stale", isCustom: true))
+        target.insert(Movement(id: "keep-me", name: "Keeper", description: "not in backup", isCustom: true))
+        try target.save()
+
+        try WorkoutBackupService.restore(backup, into: target, mode: .merge)
+
+        let movements = try target.fetch(FetchDescriptor<Movement>())
+        #expect(movements.count == 2)
+        let updated = try #require(movements.first { $0.id == "custom-band-pull" })
+        #expect(updated.name == "Band Pull-Apart")
+        #expect(movements.contains { $0.id == "keep-me" })
+        #expect(try target.fetch(FetchDescriptor<PlannedSession>()).count == 1)
+    }
+
+    @Test func restoreMergeReplacesWorkoutSessionExercisesWithoutOrphans() throws {
+        let sourceContainer = try makeContainer()
+        try populate(sourceContainer.mainContext)
+        let backup = try WorkoutBackupService.makeBackup(context: sourceContainer.mainContext)
+
+        let targetContainer = try makeContainer()
+        let target = targetContainer.mainContext
+        target.insert(WorkoutSession(
+            id: "workout-1",
+            templateId: "template-1",
+            sessionExercises: [
+                SessionExercise(movementId: "old-a", equipment: .barbell),
+                SessionExercise(movementId: "old-b", equipment: .barbell)
+            ]
+        ))
+        try target.save()
+
+        try WorkoutBackupService.restore(backup, into: target, mode: .merge)
+
+        let workouts = try target.fetch(FetchDescriptor<WorkoutSession>())
+        #expect(workouts.count == 1)
+        #expect(workouts.first?.sessionExercises.count == 1)
+        #expect(try target.fetch(FetchDescriptor<SessionExercise>()).count == 1)
+    }
+
+    @Test func restoreRejectsNewerSchemaVersion() throws {
+        let container = try makeContainer()
+        let backup = WorkoutBackup(
+            schemaVersion: WorkoutBackupService.currentSchemaVersion + 1,
+            exportedAt: .now,
+            movements: [],
+            plannedSessions: [],
+            activeSessions: [],
+            workoutTemplates: [],
+            workoutSessions: []
+        )
+
+        #expect(throws: WorkoutBackupService.BackupError.self) {
+            try WorkoutBackupService.restore(backup, into: container.mainContext, mode: .merge)
+        }
+    }
+
     @Test func defaultFilenameIncludesDate() {
         let date = Date(timeIntervalSince1970: 1_751_600_000) // 2025-07-04 UTC
         let name = WorkoutBackupService.defaultFilename(for: date)

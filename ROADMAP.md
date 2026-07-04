@@ -29,7 +29,7 @@ Check items off as they land. Pick up at the first unchecked item.
 ## Phase 3 — Data durability
 - [x] 3.1 JSON export of all user data (movements, templates, sessions,
       history) via share sheet
-- [ ] 3.2 JSON import/restore with merge-or-replace choice
+- [x] 3.2 JSON import/restore with merge-or-replace choice
 - [ ] 3.3 CloudKit compatibility audit (SwiftData + CloudKit forbids
       @Attribute(.unique); all properties need defaults or optionals)
 - [ ] 3.4 Enable CloudKit sync (needs iCloud capability + paid dev account —
