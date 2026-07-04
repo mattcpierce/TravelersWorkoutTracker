@@ -9,7 +9,7 @@ struct MovementSeederTests {
     private func makeContainer() throws -> ModelContainer {
         try ModelContainer(
             for: Movement.self, ActiveSession.self,
-            configurations: ModelConfiguration(isStoredInMemoryOnly: true)
+            configurations: ModelConfiguration(isStoredInMemoryOnly: true, cloudKitDatabase: .none)
         )
     }
 

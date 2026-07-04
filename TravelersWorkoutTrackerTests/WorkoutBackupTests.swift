@@ -10,7 +10,7 @@ struct WorkoutBackupTests {
         try ModelContainer(
             for: Movement.self, PlannedSession.self, ActiveSession.self,
             WorkoutTemplate.self, WorkoutSession.self, SessionExercise.self,
-            configurations: ModelConfiguration(isStoredInMemoryOnly: true)
+            configurations: ModelConfiguration(isStoredInMemoryOnly: true, cloudKitDatabase: .none)
         )
     }
 

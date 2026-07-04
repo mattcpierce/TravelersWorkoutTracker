@@ -13,6 +13,7 @@ final class SessionExercise {
     var rpe: Int = 0
     var notes: String?
     var isCompleted: Bool = false
+    var workoutSession: WorkoutSession?
 
     init(
         id: String = UUID().uuidString,

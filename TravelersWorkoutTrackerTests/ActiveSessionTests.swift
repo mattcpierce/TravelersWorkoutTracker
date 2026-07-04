@@ -84,7 +84,7 @@ struct ActiveSessionTests {
     private func makeContainer() throws -> ModelContainer {
         try ModelContainer(
             for: Movement.self, PlannedSession.self, ActiveSession.self,
-            configurations: ModelConfiguration(isStoredInMemoryOnly: true)
+            configurations: ModelConfiguration(isStoredInMemoryOnly: true, cloudKitDatabase: .none)
         )
     }
 
