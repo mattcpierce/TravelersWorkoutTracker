@@ -23,7 +23,7 @@ Check items off as they land. Pick up at the first unchecked item.
       movements untouched, seed idempotency
 - [x] 2.3 Modality reconciliation tests (active session with now-invalid
       selectedModality gets repaired; completed/abandoned history untouched)
-- [ ] 2.4 ActiveSessionItem.upsertLog and ActiveSessionFactory travel-mode
+- [x] 2.4 ActiveSessionItem.upsertLog and ActiveSessionFactory travel-mode
       substitution tests
 
 ## Phase 3 — Data durability
