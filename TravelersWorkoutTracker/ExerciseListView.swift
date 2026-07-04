@@ -33,7 +33,7 @@ struct ExerciseListView: View {
         }
 
         for session in sessions {
-            for entry in session.sessionExercises {
+            for entry in session.sessionExercises ?? [] {
                 lookup[entry.movementId, default: []].insert(entry.equipment)
             }
         }

@@ -13,7 +13,7 @@ struct SessionHistoryLookup {
                 continue
             }
 
-            if let match = session.sessionExercises.first(where: {
+            if let match = (session.sessionExercises ?? []).first(where: {
                 $0.movementId == movementId && $0.equipment == equipment && $0.rpe >= 6 && $0.rpe <= 10
             }) {
                 return match

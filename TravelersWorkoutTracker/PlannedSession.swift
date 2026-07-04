@@ -26,9 +26,9 @@ struct SessionBlock: Codable, Hashable, Identifiable {
 
 @Model
 final class PlannedSession {
-    @Attribute(.unique) var id: String
-    var name: String
-    @Attribute(.externalStorage) var blocks: [SessionBlock]
+    var id: String = UUID().uuidString
+    var name: String = ""
+    @Attribute(.externalStorage) var blocks: [SessionBlock] = []
     var lastPerformedDate: Date?
 
     init(

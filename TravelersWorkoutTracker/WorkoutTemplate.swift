@@ -4,12 +4,11 @@ import SwiftData
 
 @Model
 class WorkoutTemplate {
-    @Attribute(.unique)
     var id: String = UUID().uuidString
 
-    var name: String
+    var name: String = ""
     @Attribute(.externalStorage)
-    var orderedMovements: [TemplateMovement]
+    var orderedMovements: [TemplateMovement] = []
 
     init(
         id: String = UUID().uuidString,

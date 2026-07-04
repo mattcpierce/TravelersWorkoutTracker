@@ -44,7 +44,7 @@ Check items off as they land. Pick up at the first unchecked item.
       * `.externalStorage` attributes are fine (become CKAssets); cascade
         delete rule is fine; no deny rules in use.
 - [ ] 3.4 Enable CloudKit sync
-      - [ ] 3.4a Code prep: apply the model changes from the 3.3 audit
+      - [x] 3.4a Code prep: apply the model changes from the 3.3 audit
       - [ ] 3.4b User step in Xcode: add iCloud capability (CloudKit) +
             Background Modes remote-notification; container id
             iCloud.com.luckynumberthirteen.TravelersWorkoutTracker

@@ -21,7 +21,7 @@ struct SessionEditView: View {
 
     private var orderedEntries: [SessionExercise] {
         if let template {
-            var remainingEntries = session.sessionExercises
+            var remainingEntries = session.sessionExercises ?? []
             var ordered: [SessionExercise] = []
 
             for entry in template.orderedMovements {
@@ -34,7 +34,7 @@ struct SessionEditView: View {
             return ordered
         }
 
-        return session.sessionExercises
+        return session.sessionExercises ?? []
     }
 
     var body: some View {

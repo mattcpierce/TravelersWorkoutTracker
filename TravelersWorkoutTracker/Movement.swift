@@ -4,14 +4,14 @@ import SwiftData
 
 @Model
 final class Movement {
-    @Attribute(.unique) var id: String
-    var name: String
-    private var movementDescription: String
-    var category: String
-    @Attribute(.externalStorage) var tags: [String]
+    var id: String = UUID().uuidString
+    var name: String = ""
+    private var movementDescription: String = ""
+    var category: String = "General"
+    @Attribute(.externalStorage) var tags: [String] = []
     var hotelAlternativeMovementId: String?
-    @Attribute(.externalStorage) var allowedModalities: [EquipmentType]
-    var isCustom: Bool
+    @Attribute(.externalStorage) var allowedModalities: [EquipmentType] = EquipmentType.allCases
+    var isCustom: Bool = false
 
     init(
         id: String,

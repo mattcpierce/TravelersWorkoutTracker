@@ -4,10 +4,10 @@ import SwiftData
 
 @Model
 final class WorkoutSession {
-    @Attribute(.unique) var id: String
-    var date: Date
-    var templateId: String
-    @Relationship(deleteRule: .cascade) var sessionExercises: [SessionExercise]
+    var id: String = UUID().uuidString
+    var date: Date = Date.now
+    var templateId: String = ""
+    @Relationship(deleteRule: .cascade) var sessionExercises: [SessionExercise]?
 
     init(
         id: String = UUID().uuidString,

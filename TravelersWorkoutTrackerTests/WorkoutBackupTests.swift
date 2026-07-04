@@ -175,7 +175,7 @@ struct WorkoutBackupTests {
 
         let workouts = try target.fetch(FetchDescriptor<WorkoutSession>())
         #expect(workouts.count == 1)
-        #expect(workouts.first?.sessionExercises.count == 1)
+        #expect(workouts.first?.sessionExercises?.count == 1)
         #expect(try target.fetch(FetchDescriptor<SessionExercise>()).count == 1)
     }
 

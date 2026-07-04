@@ -86,13 +86,13 @@ struct ActiveSessionBlock: Codable, Hashable, Identifiable {
 
 @Model
 final class ActiveSession {
-    @Attribute(.unique) var id: String
-    var plannedSessionId: String
-    var startTime: Date
+    var id: String = UUID().uuidString
+    var plannedSessionId: String = ""
+    var startTime: Date = Date.now
     var completedAt: Date?
-    var isTravelMode: Bool
-    var status: ActiveSessionStatus
-    @Attribute(.externalStorage) var blocks: [ActiveSessionBlock]
+    var isTravelMode: Bool = false
+    var status: ActiveSessionStatus = ActiveSessionStatus.active
+    @Attribute(.externalStorage) var blocks: [ActiveSessionBlock] = []
 
     init(
         id: String = UUID().uuidString,

@@ -91,7 +91,7 @@ struct WorkoutSessionBackup: Codable {
         id = session.id
         date = session.date
         templateId = session.templateId
-        exercises = session.sessionExercises.map(SessionExerciseBackup.init)
+        exercises = (session.sessionExercises ?? []).map(SessionExerciseBackup.init)
     }
 }
 

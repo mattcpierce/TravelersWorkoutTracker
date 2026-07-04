@@ -4,15 +4,15 @@ import SwiftData
 
 @Model
 final class SessionExercise {
-    @Attribute(.unique) var id: String
-    var movementId: String
-    var equipment: EquipmentType
-    var sets: Int
-    var reps: Int
-    var weight: Int
-    var rpe: Int
+    var id: String = UUID().uuidString
+    var movementId: String = ""
+    var equipment: EquipmentType = EquipmentType.bodyweight
+    var sets: Int = 0
+    var reps: Int = 0
+    var weight: Int = 0
+    var rpe: Int = 0
     var notes: String?
-    var isCompleted: Bool
+    var isCompleted: Bool = false
 
     init(
         id: String = UUID().uuidString,
