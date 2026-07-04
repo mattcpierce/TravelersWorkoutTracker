@@ -30,10 +30,26 @@ Check items off as they land. Pick up at the first unchecked item.
 - [x] 3.1 JSON export of all user data (movements, templates, sessions,
       history) via share sheet
 - [x] 3.2 JSON import/restore with merge-or-replace choice
-- [ ] 3.3 CloudKit compatibility audit (SwiftData + CloudKit forbids
+- [x] 3.3 CloudKit compatibility audit (SwiftData + CloudKit forbids
       @Attribute(.unique); all properties need defaults or optionals)
-- [ ] 3.4 Enable CloudKit sync (needs iCloud capability + paid dev account —
-      user step in Xcode)
+
+      Audit findings (2026-07-04):
+      * All 6 models use `@Attribute(.unique)` on `id` — must be removed.
+        Safe: no code relies on unique-constraint upserts (seeder, restore,
+        and editors all dedupe manually or use fresh UUIDs).
+      * Stored properties need in-declaration defaults (or optionals) in all
+        6 models.
+      * `WorkoutSession.sessionExercises` relationship must become optional
+        (CloudKit rule); ~6 call sites need `?? []`.
+      * `.externalStorage` attributes are fine (become CKAssets); cascade
+        delete rule is fine; no deny rules in use.
+- [ ] 3.4 Enable CloudKit sync
+      - [ ] 3.4a Code prep: apply the model changes from the 3.3 audit
+      - [ ] 3.4b User step in Xcode: add iCloud capability (CloudKit) +
+            Background Modes remote-notification; container id
+            iCloud.com.luckynumberthirteen.TravelersWorkoutTracker
+      - [ ] 3.4c Switch ModelContainer to a CloudKit-backed
+            ModelConfiguration and verify sync between two devices
 
 ## Phase 4 — Equipment-based substitution (travel-mode v2)
 - [ ] 4.1 "Hotel gym equipment" profile: model + picker UI (reuse
