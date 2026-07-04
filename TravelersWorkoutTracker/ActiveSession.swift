@@ -93,6 +93,7 @@ final class ActiveSession {
     var isTravelMode: Bool = false
     var status: ActiveSessionStatus = ActiveSessionStatus.active
     @Attribute(.externalStorage) var blocks: [ActiveSessionBlock] = []
+    @Attribute(.externalStorage) var availableEquipment: [EquipmentType]?
 
     init(
         id: String = UUID().uuidString,
@@ -101,7 +102,8 @@ final class ActiveSession {
         completedAt: Date? = nil,
         isTravelMode: Bool = false,
         status: ActiveSessionStatus = .active,
-        blocks: [ActiveSessionBlock] = []
+        blocks: [ActiveSessionBlock] = [],
+        availableEquipment: [EquipmentType]? = nil
     ) {
         self.id = id
         self.plannedSessionId = plannedSessionId
@@ -110,5 +112,6 @@ final class ActiveSession {
         self.isTravelMode = isTravelMode
         self.status = status
         self.blocks = blocks
+        self.availableEquipment = availableEquipment
     }
 }

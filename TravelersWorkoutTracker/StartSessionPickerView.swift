@@ -6,6 +6,7 @@ struct StartSessionPickerView: View {
     @Query(sort: [SortDescriptor(\PlannedSession.lastPerformedDate, order: .reverse), SortDescriptor(\PlannedSession.name)]) private var plannedSessions: [PlannedSession]
 
     @State private var selectedPlannedSession: PlannedSession?
+    @State private var travelPlannedSession: PlannedSession?
     @State private var activeSessionToOpen: ActiveSession?
     @State private var saveErrorMessage: String?
 
@@ -56,14 +57,23 @@ struct StartSessionPickerView: View {
             titleVisibility: .visible
         ) {
             Button("Start in Standard Mode") {
-                startSelectedSession(isTravelMode: false)
+                if let plan = selectedPlannedSession {
+                    startSession(plan: plan, isTravelMode: false)
+                }
+                selectedPlannedSession = nil
             }
             Button("Start in Travel Mode") {
-                startSelectedSession(isTravelMode: true)
+                travelPlannedSession = selectedPlannedSession
+                selectedPlannedSession = nil
             }
             Button("Cancel", role: .cancel) {}
         } message: {
             Text(selectedPlannedSession?.name ?? "")
+        }
+        .sheet(item: $travelPlannedSession) { plan in
+            TravelEquipmentPickerView { equipment in
+                startSession(plan: plan, isTravelMode: true, availableEquipment: equipment)
+            }
         }
         .alert("Could Not Start Session", isPresented: Binding(
             get: { saveErrorMessage != nil },
@@ -75,16 +85,14 @@ struct StartSessionPickerView: View {
         }
     }
 
-    private func startSelectedSession(isTravelMode: Bool) {
-        guard let selectedPlannedSession else { return }
-
+    private func startSession(plan: PlannedSession, isTravelMode: Bool, availableEquipment: [EquipmentType]? = nil) {
         do {
             activeSessionToOpen = try ActiveSessionFactory.createActiveSession(
                 context: modelContext,
-                from: selectedPlannedSession,
-                isTravelMode: isTravelMode
+                from: plan,
+                isTravelMode: isTravelMode,
+                availableEquipment: availableEquipment
             )
-            self.selectedPlannedSession = nil
         } catch {
             saveErrorMessage = error.localizedDescription
         }

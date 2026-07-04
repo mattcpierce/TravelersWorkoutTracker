@@ -31,14 +31,26 @@ enum ActiveSessionFactory {
         )
     }
 
+    static func preferredModality(
+        from allowedModalities: [EquipmentType],
+        available: [EquipmentType]?
+    ) -> EquipmentType {
+        if let available, let match = allowedModalities.first(where: { available.contains($0) }) {
+            return match
+        }
+        return allowedModalities.first ?? .bodyweight
+    }
+
     @MainActor
     static func createActiveSession(
         context: ModelContext,
         from plannedSession: PlannedSession,
-        isTravelMode: Bool
+        isTravelMode: Bool,
+        availableEquipment: [EquipmentType]? = nil
     ) throws -> ActiveSession {
         let movements = try context.fetch(FetchDescriptor<Movement>())
         let movementLookup = Dictionary(uniqueKeysWithValues: movements.map { ($0.id, $0) })
+        let sessionEquipment = isTravelMode ? availableEquipment : nil
 
         let blocks = plannedSession.blocks
             .sorted { $0.order < $1.order }
@@ -54,7 +66,7 @@ enum ActiveSessionFactory {
                         return ActiveSessionItem(
                             movementId: originalMovementId,
                             effectiveMovementId: effectiveMovementId,
-                            selectedModality: allowedModalities.first ?? .bodyweight,
+                            selectedModality: preferredModality(from: allowedModalities, available: sessionEquipment),
                             plannedSets: item.plannedSets,
                             plannedReps: item.plannedReps,
                             status: .notStarted,
@@ -76,7 +88,8 @@ enum ActiveSessionFactory {
             startTime: .now,
             isTravelMode: isTravelMode,
             status: .active,
-            blocks: blocks
+            blocks: blocks,
+            availableEquipment: sessionEquipment
         )
 
         context.insert(activeSession)

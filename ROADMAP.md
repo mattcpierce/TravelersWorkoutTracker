@@ -52,7 +52,7 @@ Check items off as they land. Pick up at the first unchecked item.
             ModelConfiguration and verify sync between two devices
 
 ## Phase 4 — Equipment-based substitution (travel-mode v2)
-- [ ] 4.1 "Hotel gym equipment" profile: model + picker UI (reuse
+- [x] 4.1 "Hotel gym equipment" profile: model + picker UI (reuse
       EquipmentFilterView patterns)
 - [ ] 4.2 In active session, suggest substitutes filtered by available
       equipment when a movement's modalities don't fit

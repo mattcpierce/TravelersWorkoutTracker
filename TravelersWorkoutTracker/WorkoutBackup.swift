@@ -57,6 +57,7 @@ struct ActiveSessionBackup: Codable {
     var isTravelMode: Bool
     var status: ActiveSessionStatus
     var blocks: [ActiveSessionBlock]
+    var availableEquipment: [EquipmentType]?
 
     init(_ session: ActiveSession) {
         id = session.id
@@ -66,6 +67,7 @@ struct ActiveSessionBackup: Codable {
         isTravelMode = session.isTravelMode
         status = session.status
         blocks = session.blocks
+        availableEquipment = session.availableEquipment
     }
 }
 
@@ -232,6 +234,7 @@ enum WorkoutBackupService {
                 session.isTravelMode = entry.isTravelMode
                 session.status = entry.status
                 session.blocks = entry.blocks
+                session.availableEquipment = entry.availableEquipment
             } else {
                 context.insert(ActiveSession(
                     id: entry.id,
@@ -240,7 +243,8 @@ enum WorkoutBackupService {
                     completedAt: entry.completedAt,
                     isTravelMode: entry.isTravelMode,
                     status: entry.status,
-                    blocks: entry.blocks
+                    blocks: entry.blocks,
+                    availableEquipment: entry.availableEquipment
                 ))
             }
         }

@@ -108,6 +108,12 @@ struct ActiveSessionTests {
             description: "test",
             allowedModalities: [.barbell]
         ))
+        context.insert(Movement(
+            id: "row",
+            name: "Row",
+            description: "test",
+            allowedModalities: [.barbell, .dumbbells, .machine]
+        ))
         try context.save()
     }
 
@@ -161,6 +167,57 @@ struct ActiveSessionTests {
         let item = try #require(session.blocks.first?.items.first)
         #expect(item.effectiveMovementId == "squat")
         #expect(item.selectedModality == .barbell)
+    }
+
+    // MARK: - Available equipment
+
+    @Test func preferredModalityPicksFirstAllowedInAvailableEquipment() {
+        #expect(ActiveSessionFactory.preferredModality(
+            from: [.barbell, .dumbbells, .machine],
+            available: [.machine, .dumbbells]
+        ) == .dumbbells)
+        #expect(ActiveSessionFactory.preferredModality(
+            from: [.barbell],
+            available: [.dumbbells]
+        ) == .barbell)
+        #expect(ActiveSessionFactory.preferredModality(from: [.barbell, .dumbbells], available: nil) == .barbell)
+        #expect(ActiveSessionFactory.preferredModality(from: [], available: [.dumbbells]) == .bodyweight)
+    }
+
+    @Test func factoryPrefersAvailableEquipmentInTravelMode() throws {
+        let container = try makeContainer()
+        let context = container.mainContext
+        try seedTestMovements(into: context)
+        let plan = makePlannedSession(movementIds: ["row"])
+        context.insert(plan)
+
+        let session = try ActiveSessionFactory.createActiveSession(
+            context: context,
+            from: plan,
+            isTravelMode: true,
+            availableEquipment: [.machine, .bodyweight]
+        )
+
+        #expect(session.blocks.first?.items.first?.selectedModality == .machine)
+        #expect(session.availableEquipment == [.machine, .bodyweight])
+    }
+
+    @Test func factoryIgnoresAvailableEquipmentInStandardMode() throws {
+        let container = try makeContainer()
+        let context = container.mainContext
+        try seedTestMovements(into: context)
+        let plan = makePlannedSession(movementIds: ["row"])
+        context.insert(plan)
+
+        let session = try ActiveSessionFactory.createActiveSession(
+            context: context,
+            from: plan,
+            isTravelMode: false,
+            availableEquipment: [.machine]
+        )
+
+        #expect(session.blocks.first?.items.first?.selectedModality == .barbell)
+        #expect(session.availableEquipment == nil)
     }
 
     @Test func factorySortsBlocksAndItemsByOrder() throws {
