@@ -18,8 +18,7 @@ enum MovementSeeder {
     }
 
     @MainActor
-    static func seedIfNeeded(context: ModelContext) {
-        let defaults = UserDefaults.standard
+    static func seedIfNeeded(context: ModelContext, defaults: UserDefaults = .standard) {
         let storedSeedVersion = defaults.integer(forKey: seedVersionKey)
 
         do {
@@ -67,7 +66,10 @@ enum MovementSeeder {
 
     @MainActor
     private static func reconcileActiveSessionModalities(context: ModelContext) {
-        let allowedModalitiesById = Dictionary(uniqueKeysWithValues: builtInMovements.map { ($0.id, $0.allowedModalities) })
+        let allowedModalitiesById = Dictionary(
+            builtInMovements.map { ($0.id, $0.allowedModalities) },
+            uniquingKeysWith: { _, last in last }
+        )
         guard let activeSessions = try? context.fetch(FetchDescriptor<ActiveSession>()) else { return }
 
         for session in activeSessions where session.status == .active {
@@ -93,7 +95,7 @@ enum MovementSeeder {
         }
     }
 
-    private static let builtInMovements: [SeedMovement] = [
+    static let builtInMovements: [SeedMovement] = [
         .init(
             id: "back-squat",
             name: "Back Squat",
@@ -562,16 +564,6 @@ enum MovementSeeder {
             tags: ["glutes", "posterior-chain", "lower-back"],
             hotelAlternativeMovementId: "romanian-deadlift",
             allowedModalities: [.machine],
-            isCustom: false
-        ),
-        .init(
-            id: "meadows-row",
-            name: "Meadows Row",
-            movementDescription: "Stand perpendicular to the bar with one end anchored in a landmine. Brace your free hand on your knee or a bench, grab the bar sleeve with the outside hand, and hinge slightly at the hips. Pull your elbow up and back toward your hip while keeping your torso stable, pause briefly at the top, and lower the weight under control.",
-            category: "Horizontal Pull",
-            tags: ["back", "lats", "upper-back", "unilateral"],
-            hotelAlternativeMovementId: "one-arm-dumbbell-row",
-            allowedModalities: [.landmine],
             isCustom: false
         ),
         .init(

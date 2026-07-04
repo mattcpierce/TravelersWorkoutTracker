@@ -18,10 +18,10 @@ Check items off as they land. Pick up at the first unchecked item.
       grid; deduplicate ForEach structure in MovementListView sections
 
 ## Phase 2 — Test foundation
-- [ ] 2.1 Add a unit test target to the Xcode project
-- [ ] 2.2 MovementSeeder tests: fresh seed, version-bump update, custom
+- [x] 2.1 (already existed) Add a unit test target to the Xcode project
+- [x] 2.2 MovementSeeder tests: fresh seed, version-bump update, custom
       movements untouched, seed idempotency
-- [ ] 2.3 Modality reconciliation tests (active session with now-invalid
+- [x] 2.3 Modality reconciliation tests (active session with now-invalid
       selectedModality gets repaired; completed/abandoned history untouched)
 - [ ] 2.4 ActiveSessionItem.upsertLog and ActiveSessionFactory travel-mode
       substitution tests
