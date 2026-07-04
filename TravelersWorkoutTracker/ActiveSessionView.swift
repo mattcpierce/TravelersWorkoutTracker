@@ -412,30 +412,16 @@ struct ActiveSessionView: View {
     private func addExerciseToActiveSession(movement: Movement, modality: EquipmentType) {
         var blocks = activeSession.blocks
         let nextOrder = (blocks.map(\.order).max() ?? -1) + 1
-        let newItem = ActiveSessionItem(
-            movementId: movement.id,
-            effectiveMovementId: movement.id,
-            selectedModality: modality,
-            plannedSets: 3,
-            plannedReps: 10,
-            actualWeight: modality == .bodyweight ? 0 : nil,
-            actualReps: nil,
-            rpe: nil,
-            status: .notStarted,
-            notes: nil
-        )
-        let newBlock = ActiveSessionBlock(
-            type: .single,
-            order: nextOrder,
-            currentRound: 1,
-            roundsCompleted: 0,
-            items: [newItem]
+        let newBlock = ActiveSessionFactory.makeSingleExerciseBlock(
+            movement: movement,
+            modality: modality,
+            order: nextOrder
         )
 
         blocks.append(newBlock)
         activeSession.blocks = blocks
         expandedResolvedBlockID = nil
-        expandedItemID = newItem.id
+        expandedItemID = newBlock.items.first?.id
         persistChanges()
     }
 

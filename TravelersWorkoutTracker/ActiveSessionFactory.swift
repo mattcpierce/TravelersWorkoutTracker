@@ -2,6 +2,35 @@ import Foundation
 import SwiftData
 
 enum ActiveSessionFactory {
+    static let defaultPlannedSets = 3
+    static let defaultPlannedReps = 10
+
+    static func makeSingleExerciseBlock(
+        movement: Movement,
+        modality: EquipmentType,
+        order: Int
+    ) -> ActiveSessionBlock {
+        let item = ActiveSessionItem(
+            movementId: movement.id,
+            effectiveMovementId: movement.id,
+            selectedModality: modality,
+            plannedSets: defaultPlannedSets,
+            plannedReps: defaultPlannedReps,
+            actualWeight: modality == .bodyweight ? 0 : nil,
+            actualReps: nil,
+            rpe: nil,
+            status: .notStarted,
+            notes: nil
+        )
+        return ActiveSessionBlock(
+            type: .single,
+            order: order,
+            currentRound: 1,
+            roundsCompleted: 0,
+            items: [item]
+        )
+    }
+
     @MainActor
     static func createActiveSession(
         context: ModelContext,

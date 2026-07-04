@@ -4,7 +4,7 @@ Work is broken into bite-sized chunks; each chunk is one buildable commit.
 Check items off as they land. Pick up at the first unchecked item.
 
 ## Phase 1 — Code health (small, low risk)
-- [ ] 1.1 Route mid-session exercise adds through ActiveSessionFactory
+- [x] 1.1 Route mid-session exercise adds through ActiveSessionFactory
       (ActiveSessionView.addExerciseToActiveSession currently hand-builds
       ActiveSessionItem/ActiveSessionBlock; extract shared construction into
       the factory so defaults live in one place)
