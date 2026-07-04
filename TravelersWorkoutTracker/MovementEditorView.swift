@@ -212,20 +212,19 @@ struct MovementEditorView: View {
         }
     }
 
-    private func customMovementId(from name: String) -> String {
-        let slug = name
+    private func slugified(_ text: String) -> String {
+        text
             .lowercased()
             .replacingOccurrences(of: "[^a-z0-9]+", with: "-", options: .regularExpression)
             .trimmingCharacters(in: CharacterSet(charactersIn: "-"))
-        return "custom-\(slug)-\(UUID().uuidString.prefix(8))"
+    }
+
+    private func customMovementId(from name: String) -> String {
+        "custom-\(slugified(name))-\(UUID().uuidString.prefix(8))"
     }
 
     private func addCustomTag() {
-        let normalizedTag = customTagText
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-            .lowercased()
-            .replacingOccurrences(of: "[^a-z0-9-]+", with: "-", options: .regularExpression)
-            .trimmingCharacters(in: CharacterSet(charactersIn: "-"))
+        let normalizedTag = slugified(customTagText)
 
         guard !normalizedTag.isEmpty else { return }
         toggleTag(normalizedTag)
@@ -246,13 +245,14 @@ struct MovementEditorView: View {
         let columns = [GridItem(.adaptive(minimum: 96), spacing: 8)]
         LazyVGrid(columns: columns, alignment: .leading, spacing: 8) {
             ForEach(tags, id: \.self) { tag in
+                let isSelected = selectedTags.contains(tag)
                 Button {
                     toggleTag(tag)
                 } label: {
                     HStack(spacing: 6) {
                         Text(tag)
                             .font(.footnote.weight(.medium))
-                        if selectedTags.contains(tag) {
+                        if isSelected {
                             Image(systemName: selected ? "xmark.circle.fill" : "checkmark.circle.fill")
                                 .font(.caption)
                         }
@@ -261,10 +261,10 @@ struct MovementEditorView: View {
                     .padding(.vertical, 8)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .background(
-                        selectedTags.contains(tag) ? Color.accentColor.opacity(0.16) : Color(.secondarySystemFill),
+                        isSelected ? Color.accentColor.opacity(0.16) : Color(.secondarySystemFill),
                         in: Capsule(style: .continuous)
                     )
-                    .foregroundStyle(selectedTags.contains(tag) ? Color.accentColor : .primary)
+                    .foregroundStyle(isSelected ? Color.accentColor : .primary)
                 }
                 .buttonStyle(.plain)
             }

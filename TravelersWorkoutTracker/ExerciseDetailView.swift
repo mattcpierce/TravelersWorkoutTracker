@@ -23,7 +23,7 @@ struct ExerciseDetailView: View {
                 VStack(alignment: .leading, spacing: 6) {
                     Text(movement.category)
                         .font(.headline)
-                    Text(movement.isCustom ? "Custom Movement" : "Built-In Movement")
+                    Text("\(movement.sourceLabel) Movement")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                     if !movement.tags.isEmpty {

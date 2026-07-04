@@ -8,13 +8,13 @@ Check items off as they land. Pick up at the first unchecked item.
       (ActiveSessionView.addExerciseToActiveSession currently hand-builds
       ActiveSessionItem/ActiveSessionBlock; extract shared construction into
       the factory so defaults live in one place)
-- [ ] 1.2 Add `Movement.sourceLabel` computed property; use it in
+- [x] 1.2 Add `Movement.sourceLabel` computed property; use it in
       AddExerciseToTemplateView, MovementListView, ExerciseDetailView
-- [ ] 1.3 Extract one slugify helper in MovementEditorView (customMovementId
+- [x] 1.3 Extract one slugify helper in MovementEditorView (customMovementId
       and addCustomTag currently duplicate the regex)
-- [ ] 1.4 Shared movement search filter used by AddExerciseToTemplateView and
+- [x] 1.4 Shared movement search filter used by AddExerciseToTemplateView and
       MovementListView (name + category + tags)
-- [ ] 1.5 Minor view cleanups: hoist `isSelected` in MovementEditorView tag
+- [x] 1.5 Minor view cleanups: hoist `isSelected` in MovementEditorView tag
       grid; deduplicate ForEach structure in MovementListView sections
 
 ## Phase 2 — Test foundation

@@ -37,6 +37,17 @@ final class Movement {
         get { movementDescription }
         set { movementDescription = newValue }
     }
+
+    var sourceLabel: String {
+        isCustom ? "Custom" : "Built-In"
+    }
+
+    func matches(searchText: String) -> Bool {
+        searchText.isEmpty
+            || name.localizedCaseInsensitiveContains(searchText)
+            || category.localizedCaseInsensitiveContains(searchText)
+            || tags.contains { $0.localizedCaseInsensitiveContains(searchText) }
+    }
 }
 
 enum EquipmentType: String, CaseIterable, Codable, Identifiable {

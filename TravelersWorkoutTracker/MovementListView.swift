@@ -11,10 +11,7 @@ struct MovementListView: View {
 
     private var filteredMovements: [Movement] {
         movements.filter { movement in
-            let matchesSearch = searchText.isEmpty
-                || movement.name.localizedCaseInsensitiveContains(searchText)
-                || movement.category.localizedCaseInsensitiveContains(searchText)
-                || movement.tags.contains(where: { $0.localizedCaseInsensitiveContains(searchText) })
+            let matchesSearch = movement.matches(searchText: searchText)
 
             let matchesScope: Bool
             switch selectedScope {
@@ -52,23 +49,17 @@ struct MovementListView: View {
                 }
             } else {
                 if !showsScopedSections {
-                    ForEach(filteredMovements) { movement in
-                        movementRow(for: movement)
-                    }
+                    movementRows(filteredMovements)
                 } else {
                     if !builtInMovements.isEmpty {
                         Section("Built-In") {
-                            ForEach(builtInMovements) { movement in
-                                movementRow(for: movement)
-                            }
+                            movementRows(builtInMovements)
                         }
                     }
 
                     if !customMovements.isEmpty {
                         Section("Custom") {
-                            ForEach(customMovements) { movement in
-                                movementRow(for: movement)
-                            }
+                            movementRows(customMovements)
                         }
                     }
                 }
@@ -102,6 +93,12 @@ struct MovementListView: View {
         }
     }
 
+    private func movementRows(_ movements: [Movement]) -> some View {
+        ForEach(movements) { movement in
+            movementRow(for: movement)
+        }
+    }
+
     private func movementRow(for movement: Movement) -> some View {
         NavigationLink {
             ExerciseDetailView(movement: movement)
@@ -109,7 +106,7 @@ struct MovementListView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(movement.name)
                     .font(.headline)
-                Text("\(movement.category) • \(movement.isCustom ? "Custom" : "Built-In")")
+                Text("\(movement.category) • \(movement.sourceLabel)")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                 Text(movement.description)

@@ -13,14 +13,7 @@ struct AddExerciseToTemplateView: View {
     let onAdd: (Movement, EquipmentType) -> Void
 
     private var filteredMovements: [Movement] {
-        if searchText.isEmpty { return allMovements }
-        return allMovements.filter {
-            $0.name.localizedCaseInsensitiveContains(searchText)
-            || $0.category.localizedCaseInsensitiveContains(searchText)
-            || $0.tags.contains(where: { tag in
-                tag.localizedCaseInsensitiveContains(searchText)
-            })
-        }
+        allMovements.filter { $0.matches(searchText: searchText) }
     }
 
     var body: some View {
@@ -37,7 +30,7 @@ struct AddExerciseToTemplateView: View {
                                     Text(movement.name)
                                         .foregroundStyle(.primary)
                                     Spacer()
-                                    Text(movement.isCustom ? "Custom" : "Built-In")
+                                    Text(movement.sourceLabel)
                                         .font(.caption2.weight(.semibold))
                                         .padding(.horizontal, 8)
                                         .padding(.vertical, 4)
