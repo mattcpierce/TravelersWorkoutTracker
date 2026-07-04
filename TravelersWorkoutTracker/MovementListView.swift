@@ -38,6 +38,10 @@ struct MovementListView: View {
         filteredMovements.filter(\.isCustom)
     }
 
+    private var showsScopedSections: Bool {
+        selectedScope != .all
+    }
+
     var body: some View {
         List {
             if filteredMovements.isEmpty {
@@ -47,18 +51,24 @@ struct MovementListView: View {
                     Text("No movements are currently available. If this is unexpected, confirm MovementSeeder completed.")
                 }
             } else {
-                if !builtInMovements.isEmpty {
-                    Section("Built-In") {
-                        ForEach(builtInMovements) { movement in
-                            movementRow(for: movement)
+                if !showsScopedSections {
+                    ForEach(filteredMovements) { movement in
+                        movementRow(for: movement)
+                    }
+                } else {
+                    if !builtInMovements.isEmpty {
+                        Section("Built-In") {
+                            ForEach(builtInMovements) { movement in
+                                movementRow(for: movement)
+                            }
                         }
                     }
-                }
 
-                if !customMovements.isEmpty {
-                    Section("Custom") {
-                        ForEach(customMovements) { movement in
-                            movementRow(for: movement)
+                    if !customMovements.isEmpty {
+                        Section("Custom") {
+                            ForEach(customMovements) { movement in
+                                movementRow(for: movement)
+                            }
                         }
                     }
                 }

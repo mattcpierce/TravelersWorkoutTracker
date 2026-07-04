@@ -12,11 +12,12 @@ struct MovementEditorView: View {
     @State private var name: String
     @State private var descriptionText: String
     @State private var category: String
-    @State private var tagsText: String
+    @State private var selectedTags: [String]
     @State private var hotelAlternativeMovementId: String?
     @State private var selectedModalities: Set<EquipmentType>
     @State private var searchText = ""
     @State private var saveErrorMessage: String?
+    @State private var customTagText = ""
 
     init(movement: Movement? = nil) {
         self.movement = movement
@@ -24,9 +25,20 @@ struct MovementEditorView: View {
         _name = State(initialValue: movement?.name ?? "")
         _descriptionText = State(initialValue: movement?.description ?? "")
         _category = State(initialValue: movement?.category ?? "Custom")
-        _tagsText = State(initialValue: movement?.tags.joined(separator: ", ") ?? "")
+        _selectedTags = State(initialValue: movement?.tags ?? [])
         _hotelAlternativeMovementId = State(initialValue: movement?.hotelAlternativeMovementId)
         _selectedModalities = State(initialValue: Set(movement?.allowedModalities ?? [.bodyweight]))
+    }
+
+    private var allKnownTags: [String] {
+        let tags = Set(allMovements.flatMap(\.tags))
+        return tags.sorted()
+    }
+
+    private var suggestedTags: [String] {
+        let categorySuggestions = Self.suggestedTagsByCategory[category.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()] ?? []
+        let pool = Set(categorySuggestions).union(allKnownTags)
+        return pool.sorted()
     }
 
     private var availableHotelAlternatives: [Movement] {
@@ -57,8 +69,32 @@ struct MovementEditorView: View {
                 }
 
                 Section("Tags") {
-                    TextField("Comma-separated tags", text: $tagsText, axis: .vertical)
-                        .lineLimit(2...4)
+                    if selectedTags.isEmpty {
+                        Text("Choose tags that describe the movement so it is easier to search later.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    } else {
+                        tagGrid(tags: selectedTags, selected: true)
+                    }
+
+                    HStack {
+                        TextField("Add custom tag", text: $customTagText)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
+                        Button("Add") {
+                            addCustomTag()
+                        }
+                        .disabled(customTagText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                    }
+
+                    if !suggestedTags.isEmpty {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Suggested Tags")
+                                .font(.footnote.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                            tagGrid(tags: suggestedTags, selected: false)
+                        }
+                    }
                 }
 
                 Section("Allowed Modalities") {
@@ -142,10 +178,7 @@ struct MovementEditorView: View {
         let trimmedName = name.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedDescription = descriptionText.trimmingCharacters(in: .whitespacesAndNewlines)
         let trimmedCategory = category.trimmingCharacters(in: .whitespacesAndNewlines)
-        let tags = tagsText
-            .split(separator: ",")
-            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
-            .filter { !$0.isEmpty }
+        let tags = selectedTags
 
         let modalities = EquipmentType.allCases.filter { selectedModalities.contains($0) }
 
@@ -186,6 +219,71 @@ struct MovementEditorView: View {
             .trimmingCharacters(in: CharacterSet(charactersIn: "-"))
         return "custom-\(slug)-\(UUID().uuidString.prefix(8))"
     }
+
+    private func addCustomTag() {
+        let normalizedTag = customTagText
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+            .lowercased()
+            .replacingOccurrences(of: "[^a-z0-9-]+", with: "-", options: .regularExpression)
+            .trimmingCharacters(in: CharacterSet(charactersIn: "-"))
+
+        guard !normalizedTag.isEmpty else { return }
+        toggleTag(normalizedTag)
+        customTagText = ""
+    }
+
+    private func toggleTag(_ tag: String) {
+        if let index = selectedTags.firstIndex(of: tag) {
+            selectedTags.remove(at: index)
+        } else {
+            selectedTags.append(tag)
+            selectedTags.sort()
+        }
+    }
+
+    @ViewBuilder
+    private func tagGrid(tags: [String], selected: Bool) -> some View {
+        let columns = [GridItem(.adaptive(minimum: 96), spacing: 8)]
+        LazyVGrid(columns: columns, alignment: .leading, spacing: 8) {
+            ForEach(tags, id: \.self) { tag in
+                Button {
+                    toggleTag(tag)
+                } label: {
+                    HStack(spacing: 6) {
+                        Text(tag)
+                            .font(.footnote.weight(.medium))
+                        if selectedTags.contains(tag) {
+                            Image(systemName: selected ? "xmark.circle.fill" : "checkmark.circle.fill")
+                                .font(.caption)
+                        }
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 8)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(
+                        selectedTags.contains(tag) ? Color.accentColor.opacity(0.16) : Color(.secondarySystemFill),
+                        in: Capsule(style: .continuous)
+                    )
+                    .foregroundStyle(selectedTags.contains(tag) ? Color.accentColor : .primary)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+    }
+
+    private static let suggestedTagsByCategory: [String: [String]] = [
+        "squat": ["quads", "glutes", "compound", "unilateral", "hotel-friendly", "isolation"],
+        "hinge": ["hamstrings", "glutes", "posterior-chain", "compound", "bodyweight", "lower-back"],
+        "horizontal push": ["chest", "triceps", "compound", "upper-chest", "isolation", "hotel-friendly"],
+        "vertical push": ["shoulders", "triceps", "compound", "upper-chest", "hotel-friendly"],
+        "horizontal pull": ["back", "lats", "upper-back", "compound", "unilateral", "hotel-friendly"],
+        "vertical pull": ["lats", "back", "compound", "biceps", "bodyweight", "regression"],
+        "shoulders": ["delts", "rear-delts", "front-delts", "traps", "isolation", "hotel-friendly"],
+        "arms": ["biceps", "triceps", "brachialis", "compound", "isolation", "hotel-friendly"],
+        "core": ["core", "abs", "obliques", "stability", "anti-rotation", "anti-extension", "hotel-friendly"],
+        "carry / conditioning": ["conditioning", "grip", "full-body", "unilateral", "calves", "hotel-friendly"],
+        "custom": ["hotel-friendly", "compound", "isolation", "unilateral", "bodyweight"]
+    ]
 }
 
 #Preview {

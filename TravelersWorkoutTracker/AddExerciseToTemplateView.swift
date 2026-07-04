@@ -14,7 +14,13 @@ struct AddExerciseToTemplateView: View {
 
     private var filteredMovements: [Movement] {
         if searchText.isEmpty { return allMovements }
-        return allMovements.filter { $0.name.localizedCaseInsensitiveContains(searchText) }
+        return allMovements.filter {
+            $0.name.localizedCaseInsensitiveContains(searchText)
+            || $0.category.localizedCaseInsensitiveContains(searchText)
+            || $0.tags.contains(where: { tag in
+                tag.localizedCaseInsensitiveContains(searchText)
+            })
+        }
     }
 
     var body: some View {
@@ -27,8 +33,23 @@ struct AddExerciseToTemplateView: View {
                             showingModalityDialog = true
                         } label: {
                             VStack(alignment: .leading, spacing: 4) {
-                                Text(movement.name)
-                                    .foregroundStyle(.primary)
+                                HStack {
+                                    Text(movement.name)
+                                        .foregroundStyle(.primary)
+                                    Spacer()
+                                    Text(movement.isCustom ? "Custom" : "Built-In")
+                                        .font(.caption2.weight(.semibold))
+                                        .padding(.horizontal, 8)
+                                        .padding(.vertical, 4)
+                                        .background(
+                                            movement.isCustom ? Color.orange.opacity(0.14) : Color(.secondarySystemFill),
+                                            in: Capsule(style: .continuous)
+                                        )
+                                        .foregroundStyle(movement.isCustom ? .orange : .secondary)
+                                }
+                                Text(movement.category)
+                                    .font(.caption.weight(.medium))
+                                    .foregroundStyle(.secondary)
                                 Text(movement.description)
                                     .font(.caption)
                                     .foregroundStyle(.secondary)

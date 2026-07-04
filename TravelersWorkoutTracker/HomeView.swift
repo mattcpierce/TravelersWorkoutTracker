@@ -49,7 +49,19 @@ struct HomeView: View {
                             .foregroundStyle(.secondary)
                     } else {
                         ForEach(activeSessionList) { activeSession in
-                            activeSessionRow(activeSession)
+                            ActiveSessionSwipeRow(
+                                title: plannedSessions.first(where: { $0.id == activeSession.plannedSessionId })?.name ?? "Active Session",
+                                subtitle: activeSession.startTime.formatted(date: .abbreviated, time: .shortened),
+                                onCancel: { cancelSession(activeSession) }
+                            ) {
+                                NavigationLink {
+                                    ActiveSessionView(activeSession: activeSession)
+                                } label: {
+                                    Text("Resume")
+                                        .font(.subheadline.weight(.semibold))
+                                }
+                                .buttonStyle(.borderedProminent)
+                            }
                         }
                     }
                 }
@@ -88,6 +100,12 @@ struct HomeView: View {
                         }
                     }
                 }
+
+                Text(appVersionText)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .padding(.top, 8)
             }
             .padding()
         }
@@ -109,6 +127,12 @@ struct HomeView: View {
             Text("completed sessions")
                 .foregroundStyle(.secondary)
         }
+    }
+
+    private var appVersionText: String {
+        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "Unknown"
+        let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "Unknown"
+        return "Version \(version) (\(build))"
     }
 
     private func homeCard(title: String, subtitle: String, systemImage: String) -> some View {
@@ -138,49 +162,9 @@ struct HomeView: View {
         .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 
-    private func activeSessionRow(_ activeSession: ActiveSession) -> some View {
-        HStack(spacing: 12) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(plannedSessions.first(where: { $0.id == activeSession.plannedSessionId })?.name ?? "Active Session")
-                    .font(.headline)
-                Text(activeSession.startTime.formatted(date: .abbreviated, time: .shortened))
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-            }
-
-            Spacer()
-
-            NavigationLink {
-                ActiveSessionView(activeSession: activeSession)
-            } label: {
-                Text("Resume")
-                    .font(.subheadline.weight(.semibold))
-            }
-            .buttonStyle(.borderedProminent)
-        }
-        .padding(.vertical, 4)
-        .swipeActions(edge: .leading, allowsFullSwipe: false) {
-            Button("Complete") {
-                completeSession(activeSession)
-            }
-            .tint(.green)
-        }
-        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-            Button("Delete", role: .destructive) {
-                deleteSession(activeSession)
-            }
-        }
-    }
-
-    private func completeSession(_ activeSession: ActiveSession) {
-        activeSession.status = .completed
+    private func cancelSession(_ activeSession: ActiveSession) {
+        activeSession.status = .abandoned
         activeSession.completedAt = .now
-        plannedSessions.first(where: { $0.id == activeSession.plannedSessionId })?.lastPerformedDate = .now
-        persistChanges()
-    }
-
-    private func deleteSession(_ activeSession: ActiveSession) {
-        modelContext.delete(activeSession)
         persistChanges()
     }
 
@@ -201,6 +185,94 @@ struct HomeView: View {
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
+}
+
+private struct ActiveSessionSwipeRow<TrailingContent: View>: View {
+    private let title: String
+    private let subtitle: String
+    private let onCancel: () -> Void
+    private let trailingContent: TrailingContent
+
+    @State private var dragOffset: CGFloat = 0
+
+    private let actionWidth: CGFloat = 92
+
+    init(
+        title: String,
+        subtitle: String,
+        onCancel: @escaping () -> Void,
+        @ViewBuilder trailingContent: () -> TrailingContent
+    ) {
+        self.title = title
+        self.subtitle = subtitle
+        self.onCancel = onCancel
+        self.trailingContent = trailingContent()
+    }
+
+    var body: some View {
+        ZStack(alignment: .trailing) {
+            Button(role: .destructive) {
+                withAnimation(.spring(response: 0.25, dampingFraction: 0.85)) {
+                    dragOffset = 0
+                }
+                onCancel()
+            } label: {
+                VStack(spacing: 6) {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.headline)
+                    Text("Cancel")
+                        .font(.caption.weight(.semibold))
+                }
+                .frame(width: actionWidth)
+                .frame(maxHeight: .infinity)
+            }
+            .buttonStyle(.plain)
+            .tint(.red)
+
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(title)
+                        .font(.headline)
+                    Text(subtitle)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer()
+
+                trailingContent
+            }
+            .padding(.vertical, 10)
+            .contentShape(Rectangle())
+            .background(Color(.secondarySystemBackground))
+            .offset(x: dragOffset)
+            .gesture(
+                DragGesture(minimumDistance: 12)
+                    .onChanged { value in
+                        let translation = value.translation.width
+                        guard translation <= 0 else {
+                            dragOffset = min(0, dragOffset + translation / 12)
+                            return
+                        }
+
+                        dragOffset = max(-actionWidth, translation)
+                    }
+                    .onEnded { value in
+                        withAnimation(.spring(response: 0.25, dampingFraction: 0.85)) {
+                            dragOffset = value.translation.width < -(actionWidth * 0.45) ? -actionWidth : 0
+                        }
+                    }
+            )
+            .onTapGesture {
+                if dragOffset != 0 {
+                    withAnimation(.spring(response: 0.25, dampingFraction: 0.85)) {
+                        dragOffset = 0
+                    }
+                }
+            }
+        }
+        .clipped()
     }
 }
 

@@ -17,6 +17,7 @@ struct ActiveSessionView: View {
     @State private var expandedItemID: String?
     @State private var expandedResolvedBlockID: String?
     @State private var saveErrorMessage: String?
+    @State private var showingAddExerciseSheet = false
 
     private var plannedSession: PlannedSession? {
         plannedSessions.first { $0.id == activeSession.plannedSessionId }
@@ -67,6 +68,13 @@ struct ActiveSessionView: View {
         .navigationTitle(plannedSession?.name ?? "Active Session")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
+            ToolbarItem(placement: .topBarLeading) {
+                Button {
+                    showingAddExerciseSheet = true
+                } label: {
+                    Label("Add Exercise", systemImage: "plus")
+                }
+            }
             ToolbarItem(placement: .topBarTrailing) {
                 Button("Finish") {
                     finishSession()
@@ -97,6 +105,11 @@ struct ActiveSessionView: View {
                 }
             }
             .presentationDetents([.medium, .large])
+        }
+        .sheet(isPresented: $showingAddExerciseSheet) {
+            AddExerciseToTemplateView { movement, equipment in
+                addExerciseToActiveSession(movement: movement, modality: equipment)
+            }
         }
         .sheet(item: $rpeTarget) { target in
             QuickRPEPickerSheet(
@@ -159,6 +172,14 @@ struct ActiveSessionView: View {
             Text(canFinishSession ? "All exercises are resolved. You can finish this session." : "Open each exercise, log what you did, then mark it Complete, Skip, or Incomplete.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
+            Button {
+                showingAddExerciseSheet = true
+            } label: {
+                Label("Add Exercise To This Session", systemImage: "plus.circle.fill")
+                    .font(.subheadline.weight(.semibold))
+            }
+            .buttonStyle(.plain)
+            .padding(.top, 4)
         }
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -386,6 +407,36 @@ struct ActiveSessionView: View {
         plannedSession?.lastPerformedDate = .now
         persistChanges()
         dismiss()
+    }
+
+    private func addExerciseToActiveSession(movement: Movement, modality: EquipmentType) {
+        var blocks = activeSession.blocks
+        let nextOrder = (blocks.map(\.order).max() ?? -1) + 1
+        let newItem = ActiveSessionItem(
+            movementId: movement.id,
+            effectiveMovementId: movement.id,
+            selectedModality: modality,
+            plannedSets: 3,
+            plannedReps: 10,
+            actualWeight: modality == .bodyweight ? 0 : nil,
+            actualReps: nil,
+            rpe: nil,
+            status: .notStarted,
+            notes: nil
+        )
+        let newBlock = ActiveSessionBlock(
+            type: .single,
+            order: nextOrder,
+            currentRound: 1,
+            roundsCompleted: 0,
+            items: [newItem]
+        )
+
+        blocks.append(newBlock)
+        activeSession.blocks = blocks
+        expandedResolvedBlockID = nil
+        expandedItemID = newItem.id
+        persistChanges()
     }
 
     private func currentItem(blockId: String, itemId: String) -> ActiveSessionItem? {
