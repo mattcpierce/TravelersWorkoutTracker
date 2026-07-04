@@ -60,6 +60,13 @@ Check items off as they land. Pick up at the first unchecked item.
       back to equipment-based matches
 
 ## Deferred (agreed, revisit later)
+- Camera equipment scan: instead of (or alongside) the manual hotel
+  equipment checklist, let the user scan the gym with their camera and
+  use AI vision to detect the equipment present, pre-filling the
+  TravelEquipmentPickerView selection (user confirms/edits before
+  starting). Candidates: on-device Vision/Core ML classification, or a
+  cloud vision API (e.g. Claude with image input) mapping photos to
+  EquipmentType cases.
 - kg/lb unit support (weight is currently a bare Int)
 - Rest timer + lock-screen Live Activity for active sessions
 - Progress charts (Swift Charts over existing history: per-movement
