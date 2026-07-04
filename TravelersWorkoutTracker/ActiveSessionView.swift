@@ -132,9 +132,18 @@ struct ActiveSessionView: View {
             titleVisibility: .visible
         ) {
             if let target = exerciseChangeTarget,
-               let hotelAlternative = hotelAlternativeMovement(for: target.item) {
+               let hotelAlternative = hotelAlternativeMovement(for: target.item),
+               MovementSubstitution.fits(hotelAlternative, availableEquipment: sessionEquipment) {
                 Button("Use Hotel Alternative") {
                     applyExerciseChange(to: hotelAlternative.id, for: target)
+                }
+            }
+
+            if let target = exerciseChangeTarget {
+                ForEach(equipmentSubstitutes(for: target.item), id: \.id) { substitute in
+                    Button("Switch to \(substitute.name)") {
+                        applyExerciseChange(to: substitute.id, for: target)
+                    }
                 }
             }
 
@@ -456,12 +465,25 @@ struct ActiveSessionView: View {
         return movementLookup[hotelAlternativeId]
     }
 
+    private var sessionEquipment: [EquipmentType]? {
+        activeSession.isTravelMode ? activeSession.availableEquipment : nil
+    }
+
+    private func equipmentSubstitutes(for item: ActiveSessionItem) -> [Movement] {
+        guard let available = sessionEquipment,
+              let current = displayedMovement(for: item) else { return [] }
+        return MovementSubstitution.substitutes(for: current, from: movements, availableEquipment: available)
+    }
+
     private func applyExerciseChange(to movementId: String, for target: ExerciseChangeTarget) {
         let allowedModalities = movementLookup[movementId]?.allowedModalities ?? []
+        let equipment = sessionEquipment
         updateItem(blockId: target.blockId, itemId: target.item.id) { item in
             item.effectiveMovementId = movementId
-            if !allowedModalities.isEmpty, !allowedModalities.contains(item.selectedModality) {
-                item.selectedModality = allowedModalities.first ?? .bodyweight
+            let selectionInvalid = !allowedModalities.contains(item.selectedModality)
+            let selectionUnavailable = equipment.map { !$0.contains(item.selectedModality) } ?? false
+            if !allowedModalities.isEmpty, selectionInvalid || selectionUnavailable {
+                item.selectedModality = ActiveSessionFactory.preferredModality(from: allowedModalities, available: equipment)
             }
             if item.selectedModality == .bodyweight {
                 item.actualWeight = 0

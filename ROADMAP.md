@@ -54,9 +54,9 @@ Check items off as they land. Pick up at the first unchecked item.
 ## Phase 4 — Equipment-based substitution (travel-mode v2)
 - [x] 4.1 "Hotel gym equipment" profile: model + picker UI (reuse
       EquipmentFilterView patterns)
-- [ ] 4.2 In active session, suggest substitutes filtered by available
+- [x] 4.2 In active session, suggest substitutes filtered by available
       equipment when a movement's modalities don't fit
-- [ ] 4.3 Keep hotelAlternativeMovementId as the preferred suggestion, fall
+- [x] 4.3 Keep hotelAlternativeMovementId as the preferred suggestion, fall
       back to equipment-based matches
 
 ## Deferred (agreed, revisit later)
