@@ -27,7 +27,7 @@ Check items off as they land. Pick up at the first unchecked item.
       substitution tests
 
 ## Phase 3 — Data durability
-- [ ] 3.1 JSON export of all user data (movements, templates, sessions,
+- [x] 3.1 JSON export of all user data (movements, templates, sessions,
       history) via share sheet
 - [ ] 3.2 JSON import/restore with merge-or-replace choice
 - [ ] 3.3 CloudKit compatibility audit (SwiftData + CloudKit forbids

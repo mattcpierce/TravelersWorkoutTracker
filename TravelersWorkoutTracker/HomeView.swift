@@ -1,11 +1,14 @@
 import SwiftData
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct HomeView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: [SortDescriptor(\ActiveSession.startTime, order: .reverse)]) private var activeSessions: [ActiveSession]
     @Query(sort: [SortDescriptor(\PlannedSession.lastPerformedDate, order: .reverse), SortDescriptor(\PlannedSession.name)]) private var plannedSessions: [PlannedSession]
     @State private var saveErrorMessage: String?
+    @State private var backupDocument: WorkoutBackupDocument?
+    @State private var showingBackupExporter = false
 
     private var activeSessionList: [ActiveSession] {
         activeSessions.filter { $0.status == .active }
@@ -110,6 +113,25 @@ struct HomeView: View {
             .padding()
         }
         .navigationTitle("Home")
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    exportBackup()
+                } label: {
+                    Label("Back Up Data", systemImage: "square.and.arrow.up")
+                }
+            }
+        }
+        .fileExporter(
+            isPresented: $showingBackupExporter,
+            document: backupDocument,
+            contentType: .json,
+            defaultFilename: WorkoutBackupService.defaultFilename()
+        ) { result in
+            if case .failure(let error) = result {
+                saveErrorMessage = error.localizedDescription
+            }
+        }
         .alert("Could Not Save", isPresented: Binding(
             get: { saveErrorMessage != nil },
             set: { if !$0 { saveErrorMessage = nil } }
@@ -126,6 +148,15 @@ struct HomeView: View {
                 .font(.system(size: 34, weight: .bold, design: .rounded))
             Text("completed sessions")
                 .foregroundStyle(.secondary)
+        }
+    }
+
+    private func exportBackup() {
+        do {
+            backupDocument = WorkoutBackupDocument(data: try WorkoutBackupService.exportJSON(context: modelContext))
+            showingBackupExporter = true
+        } catch {
+            saveErrorMessage = error.localizedDescription
         }
     }
 
